@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+
 	"github.com/lvl484/task-runner/database"
 	"github.com/lvl484/task-runner/model"
 	"github.com/lvl484/task-runner/scheduler"
@@ -32,6 +33,19 @@ func (s *Service) CreateTask(ctx context.Context, task *model.Task) (string, err
 	return id, nil
 }
 
+func (s *Service) CreateAction(ctx context.Context, task *model.Task) (string, error) {
+	task.IsAction = true
+	id, err := s.database.CreateTask(ctx, task)
+	if err != nil {
+		return "", fmt.Errorf("database: %w", err)
+	}
+	err = s.scheduler.ScheduleTask(ctx, task)
+	if err != nil {
+		return "", fmt.Errorf("schedule: %w", err)
+	}
+	return id, nil
+}
+
 func (s *Service) DeleteTask(ctx context.Context, id string) error {
 	err := s.scheduler.UnscheduleTask()
 	if err != nil {
@@ -42,7 +56,6 @@ func (s *Service) DeleteTask(ctx context.Context, id string) error {
 		return fmt.Errorf("database: %w", err)
 	}
 	return nil
-
 }
 
 func (s *Service) UpdateTask(ctx context.Context, id string, task *model.Task) error {

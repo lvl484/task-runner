@@ -3,10 +3,11 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/lvl484/task-runner/database"
 	"github.com/lvl484/task-runner/model"
 	"github.com/lvl484/task-runner/runner"
-	"time"
 )
 
 type Scheduler struct {
@@ -36,7 +37,7 @@ func (s *Scheduler) run(ctx context.Context, id string) error {
 		return fmt.Errorf("get task: %w", err)
 	}
 	task.Status = model.Running
-	task.TimeStart = time.Now()
+
 	err = s.database.UpdateTask(ctx, task.ID, task)
 	if err != nil {
 		return fmt.Errorf("update running task: %w", err)

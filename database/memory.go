@@ -25,6 +25,7 @@ func (m *Memory) CreateTask(ctx context.Context, task *model.Task) (string, erro
 	defer m.mu.Unlock()
 
 	task.ID = uuid.New().String()
+
 	m.tasks[task.ID] = task
 	return task.ID, nil
 }

@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 type Task struct {
 	ID         string    `json:"id"`
@@ -9,4 +11,5 @@ type Task struct {
 	TimeFinish time.Time `json:"time_finish"`
 	Status     Status    `json:"status"`
 	Output     string    `json:"output"`
+	IsAction   bool      `json:"is_action"`
 }
