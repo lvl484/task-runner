@@ -31,6 +31,13 @@ func (s *Scheduler) UnscheduleTask() error {
 	return nil
 }
 
+// run() receive task id and getting task from database
+// the set Status as running, and TimeStart as current time.
+// Do updating task in database with new Status and TimeStart
+// Execution task return Status Succeed if task was successful done otherwise Failed
+// After that TimeFinish set as current time to record time when task was done
+// Output set as result of task execution
+// Do updating task in database with new Output and TimeSFinish
 func (s *Scheduler) run(ctx context.Context, id string) error {
 	task, err := s.database.GetTask(ctx, id)
 	if err != nil {
