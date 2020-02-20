@@ -3,13 +3,10 @@ package runner
 import (
 	"context"
 	"fmt"
+	"os/exec"
+
 	"github.com/lvl484/task-runner/actions"
 	"github.com/lvl484/task-runner/model"
-	"os/exec"
-)
-
-const (
-	LayoutTimeFormat = "02 Jan 06 15:04 -0700"
 )
 
 type Bash struct {
