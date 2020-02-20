@@ -3,12 +3,26 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/lvl484/task-runner/model"
 	"github.com/lvl484/task-runner/service"
-	"log"
-	"net/http"
 )
+
+type Operations string
+
+const (
+	CreateTask   Operations = "create task"
+	CreateAction Operations = "create action"
+	GetStatus    Operations = "get status"
+	UpdateTask   Operations = "update task"
+	DeleteTask   Operations = "delete task"
+	GetOutput    Operations = "get output"
+)
+
+const TaskID string = "ID"
 
 type HTTP struct {
 	service *service.Service
@@ -22,117 +36,114 @@ func NewHTTP(s *service.Service, addr string) *HTTP {
 	}
 }
 
-// CreateTask: Decode request and call func h.service.CreateTask to add new task into database (map)
+// CreateTask Decodes request and adds new task into memory
 func (h *HTTP) CreateTask(w http.ResponseWriter, r *http.Request) {
 	var task model.Task
 
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
-		log.Println("create task:", err)
+		log.Println(CreateTask, err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	id, err := h.service.CreateTask(r.Context(), &task)
 	if err != nil {
-		log.Println("create task:", err)
+		log.Println(CreateAction, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	_, err = w.Write([]byte(id))
 	if err != nil {
-		log.Println("create task:", err)
+		log.Println(CreateTask, err)
 	}
 }
 
-// CreateTask: Decode request and call func h.service.CreateAction to add new action into database (map)
+// CreateTask Decodes request and adds new action into memory
 func (h *HTTP) CreateAction(w http.ResponseWriter, r *http.Request) {
 	var task model.Task
 
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
-		log.Println("create action:", err)
+		log.Println(CreateAction, err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	id, err := h.service.CreateAction(r.Context(), &task)
 	if err != nil {
-		log.Println("create action:", err)
+		log.Println(CreateAction, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	_, err = w.Write([]byte(id))
 	if err != nil {
-		log.Println("create action:", err)
+		log.Println(CreateAction, err)
 	}
 }
 
-// GetTaskStatus: read id from request, call func h.service.GetTask to get task from database (map)
+// GetTaskStatus reads id from request and gets task from memory
 // Write into response task Status
 func (h *HTTP) GetTaskStatus(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["ID"]
+	id := GetIdFromRequest(r)
 	task, err := h.service.GetTask(r.Context(), id)
 	if err != nil {
-		log.Println("get status:", err)
+		log.Println(GetStatus, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	_, err = w.Write([]byte(task.Status))
 	if err != nil {
-		log.Println("get status:", err)
+		log.Println(GetStatus, err)
 	}
 }
 
-// UpdateTask: read id from request, decode request to get task, and call func h.service.UpdateTask to update database (map)
+// UpdateTask reads id from request, decodes request to get task, and updates memory
 func (h *HTTP) UpdateTask(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["ID"]
+	id := GetIdFromRequest(r)
 	var task model.Task
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
-		log.Println("update task:", err)
+		log.Println(UpdateTask, err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	err = h.service.UpdateTask(r.Context(), id, &task)
 	if err != nil {
-		log.Println("update task:", err)
+		log.Println(UpdateTask, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
 
-// DeleteTask: read id from request and call func h.service.DeleteTask to delete row from database (map)
+// DeleteTask reads id from request and deletes row from memory
 func (h *HTTP) DeleteTask(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["ID"]
+	id := GetIdFromRequest(r)
 	err := h.service.DeleteTask(r.Context(), id)
 	if err != nil {
-		log.Println("delete task:", err)
+		log.Println(DeleteTask, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
 
-// GetTaskOutput: read id from request, call func h.service.GetTask to get task from database (map)
+// GetTaskOutput reads id from request and gets task from memory
 // Write into response task Output
 func (h *HTTP) GetTaskOutput(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["ID"]
+	id := GetIdFromRequest(r)
 	task, err := h.service.GetTask(r.Context(), id)
 	if err != nil {
-		log.Println("get status:", err)
+		log.Println(GetOutput, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	_, err = w.Write([]byte(task.Output))
 	if err != nil {
-		log.Println("get status:", err)
+		log.Println(GetOutput, err)
 	}
 }
 
+// Start create all routes and starting server
 func (h *HTTP) Start() error {
 	mainRoute := mux.NewRouter()
 	mainRoute.HandleFunc("/tasks", h.CreateTask).Methods(http.MethodPost)
