@@ -22,7 +22,7 @@ func NewService(database database.Database, scheduler *scheduler.Scheduler) *Ser
 }
 
 func (s *Service) CreateTask(ctx context.Context, input *model.TaskInput) (string, error) {
-	task := &model.Task{TaskInput: *input}
+	task := model.NewTask(input)
 	id, err := s.database.CreateTask(ctx, task)
 	if err != nil {
 		return "", fmt.Errorf("database: %w", err)
@@ -35,7 +35,7 @@ func (s *Service) CreateTask(ctx context.Context, input *model.TaskInput) (strin
 }
 
 func (s *Service) CreateAction(ctx context.Context, input *model.TaskInput) (string, error) {
-	task := &model.Task{TaskInput: *input, IsAction: true}
+	task := model.NewAction(input)
 	id, err := s.database.CreateTask(ctx, task)
 	if err != nil {
 		return "", fmt.Errorf("database: %w", err)
@@ -60,7 +60,7 @@ func (s *Service) DeleteTask(ctx context.Context, id string) error {
 }
 
 func (s *Service) UpdateTask(ctx context.Context, id string, input *model.TaskInput) error {
-	task := &model.Task{TaskInput: *input}
+	task := model.NewTask(input)
 	err := s.scheduler.UnscheduleTask(id)
 	if err != nil {
 		return fmt.Errorf("unschedule: %w", err)

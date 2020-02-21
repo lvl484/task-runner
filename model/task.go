@@ -18,3 +18,18 @@ type Task struct {
 	IsAction   bool      `json:"is_action"`
 	TaskInput  `json:"task_input"`
 }
+
+func NewTask(input *TaskInput) *Task {
+	input.Schedule.SetDefaultValue()
+	return &Task{
+		TaskInput: *input,
+	}
+}
+
+func NewAction(input *TaskInput) *Task {
+	input.Schedule.SetDefaultValue()
+	return &Task{
+		TaskInput: *input,
+		IsAction:  true,
+	}
+}
