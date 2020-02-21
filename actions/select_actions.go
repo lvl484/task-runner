@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	PDCurrentTime = "CurrentTime"
-	PDCurrentOS = "CurrentOS"
-	PDCurrentCPU = "CurrentCPU"
+	PredefinedCurrentTime = "CurrentTime"
+	PredefinedCurrentOS   = "CurrentOS"
+	PredefinedCurrentCPU  = "CurrentCPU"
 )
 
 // SelectActions check json field task.Script. Compare it with all Predefined actions.
@@ -19,11 +19,11 @@ const (
 func SelectActions(ctx context.Context, task *model.Task) (string, error) {
 	action := task.Script
 	switch action {
-	case PDCurrentTime:
+	case PredefinedCurrentTime:
 		return CurrentTime(), nil
-	case PDCurrentOS:
+	case PredefinedCurrentOS:
 		return CurrentOS(), nil
-	case PDCurrentCPU:
+	case PredefinedCurrentCPU:
 		return CurrentCPU(), nil
 	default:
 		fmt.Println("\r\nUndefined action")

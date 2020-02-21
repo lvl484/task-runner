@@ -10,11 +10,11 @@ import (
 )
 
 type Service struct {
-	database  database.Interface
+	database  database.Database
 	scheduler *scheduler.Scheduler
 }
 
-func NewService(database database.Interface, scheduler *scheduler.Scheduler) *Service{
+func NewService(database database.Database, scheduler *scheduler.Scheduler) *Service{
 	return &Service{
 		database:  database,
 		scheduler: scheduler,

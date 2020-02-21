@@ -11,11 +11,11 @@ import (
 )
 
 type Scheduler struct {
-	runner   runner.Interface
-	database database.Interface
+	runner   runner.Runner
+	database database.Database
 }
 
-func NewScheduler(ctx context.Context, runner runner.Interface, database database.Interface) (*Scheduler, error) {
+func NewScheduler(ctx context.Context, runner runner.Runner, database database.Database) (*Scheduler, error) {
 	return &Scheduler{
 		runner:   runner,
 		database: database,
