@@ -26,7 +26,7 @@ func (s *Scheduler) ScheduleTask(ctx context.Context, task *model.Task) error {
 	return s.run(ctx, task.ID)
 }
 
-func (s *Scheduler) UnscheduleTask() error {
+func (s *Scheduler) UnscheduleTask(id string) error {
 
 	return nil
 }

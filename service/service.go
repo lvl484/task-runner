@@ -14,14 +14,15 @@ type Service struct {
 	scheduler *scheduler.Scheduler
 }
 
-func NewService(database database.Database, scheduler *scheduler.Scheduler) *Service{
+func NewService(database database.Database, scheduler *scheduler.Scheduler) *Service {
 	return &Service{
 		database:  database,
 		scheduler: scheduler,
 	}
 }
 
-func (s *Service) CreateTask(ctx context.Context, task *model.Task) (string, error) {
+func (s *Service) CreateTask(ctx context.Context, input *model.TaskInput) (string, error) {
+	task := &model.Task{TaskInput: *input}
 	id, err := s.database.CreateTask(ctx, task)
 	if err != nil {
 		return "", fmt.Errorf("database: %w", err)
@@ -33,8 +34,8 @@ func (s *Service) CreateTask(ctx context.Context, task *model.Task) (string, err
 	return id, nil
 }
 
-func (s *Service) CreateAction(ctx context.Context, task *model.Task) (string, error) {
-	task.IsAction = true
+func (s *Service) CreateAction(ctx context.Context, input *model.TaskInput) (string, error) {
+	task := &model.Task{TaskInput: *input, IsAction: true}
 	id, err := s.database.CreateTask(ctx, task)
 	if err != nil {
 		return "", fmt.Errorf("database: %w", err)
@@ -47,7 +48,7 @@ func (s *Service) CreateAction(ctx context.Context, task *model.Task) (string, e
 }
 
 func (s *Service) DeleteTask(ctx context.Context, id string) error {
-	err := s.scheduler.UnscheduleTask()
+	err := s.scheduler.UnscheduleTask(id)
 	if err != nil {
 		return fmt.Errorf("unschedule: %w", err)
 	}
@@ -58,13 +59,14 @@ func (s *Service) DeleteTask(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *Service) UpdateTask(ctx context.Context, id string, task *model.Task) error {
-	err := s.scheduler.UnscheduleTask()
+func (s *Service) UpdateTask(ctx context.Context, id string, input *model.TaskInput) error {
+	task := &model.Task{TaskInput: *input}
+	err := s.scheduler.UnscheduleTask(id)
 	if err != nil {
 		return fmt.Errorf("unschedule: %w", err)
 	}
 	err = s.database.UpdateTask(ctx, id, task)
-	if err !=  nil {
+	if err != nil {
 		return fmt.Errorf("database: %w", err)
 	}
 	err = s.scheduler.ScheduleTask(ctx, task)

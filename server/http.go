@@ -25,7 +25,7 @@ func NewHTTP(s *service.Service, addr string) *HTTP {
 	}
 }
 
-func (h *HTTP) jsonDecoding(w http.ResponseWriter, r *http.Request, task *model.Task, str string) {
+func (h *HTTP) jsonDecoding(w http.ResponseWriter, r *http.Request, task *model.TaskInput, str string) {
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
 		log.Println(str, err)
@@ -53,7 +53,7 @@ func (h *HTTP) writingResponse(w http.ResponseWriter, value []byte, str string) 
 
 // CreateTask Decodes request and adds new task into memory
 func (h *HTTP) CreateTask(w http.ResponseWriter, r *http.Request) {
-	var task model.Task
+	var task model.TaskInput
 	h.jsonDecoding(w, r, &task, "create task [json decoding]:")
 
 	id, err := h.service.CreateTask(r.Context(), &task)
@@ -67,7 +67,7 @@ func (h *HTTP) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 // CreateTask Decodes request and adds new action into memory
 func (h *HTTP) CreateAction(w http.ResponseWriter, r *http.Request) {
-	var task model.Task
+	var task model.TaskInput
 	h.jsonDecoding(w, r, &task, "create action [json decoding]")
 
 	id, err := h.service.CreateAction(r.Context(), &task)
@@ -92,7 +92,7 @@ func (h *HTTP) GetTaskStatus(w http.ResponseWriter, r *http.Request) {
 func (h *HTTP) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars[TaskID]
-	var task model.Task
+	var task model.TaskInput
 	h.jsonDecoding(w, r, &task, "create action [json decoding]")
 
 	err := h.service.UpdateTask(r.Context(), id, &task)
@@ -133,8 +133,6 @@ func (h *HTTP) Start() error {
 	mainRoute.HandleFunc("/tasks/{ID}/output", h.GetTaskOutput).Methods(http.MethodGet)
 	mainRoute.HandleFunc("/tasks/{ID}/status", h.GetTaskStatus).Methods(http.MethodGet)
 	mainRoute.HandleFunc("/tasks/action", h.CreateAction).Methods(http.MethodPost)
-
-	mainRoute.HandleFunc("/tasks/schedule", model.CreateSchedule).Methods(http.MethodPost)
 
 	fmt.Printf("Server Listening...")
 	return http.ListenAndServe(h.address, mainRoute)
