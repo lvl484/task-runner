@@ -3,12 +3,11 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-
 	"github.com/gorilla/mux"
 	"github.com/lvl484/task-runner/model"
 	"github.com/lvl484/task-runner/service"
+	"log"
+	"net/http"
 )
 
 const TaskID string = "ID"
@@ -55,7 +54,6 @@ func (h *HTTP) writingResponse(w http.ResponseWriter, value []byte, str string) 
 func (h *HTTP) CreateTask(w http.ResponseWriter, r *http.Request) {
 	var task model.TaskInput
 	h.jsonDecoding(w, r, &task, "create task [json decoding]:")
-
 	id, err := h.service.CreateTask(r.Context(), &task)
 	if err != nil {
 		log.Println("create task:", err)
@@ -69,7 +67,6 @@ func (h *HTTP) CreateTask(w http.ResponseWriter, r *http.Request) {
 func (h *HTTP) CreateAction(w http.ResponseWriter, r *http.Request) {
 	var task model.TaskInput
 	h.jsonDecoding(w, r, &task, "create action [json decoding]")
-
 	id, err := h.service.CreateAction(r.Context(), &task)
 	if err != nil {
 		log.Println("create action:", err)
@@ -134,6 +131,6 @@ func (h *HTTP) Start() error {
 	mainRoute.HandleFunc("/tasks/{ID}/status", h.GetTaskStatus).Methods(http.MethodGet)
 	mainRoute.HandleFunc("/tasks/action", h.CreateAction).Methods(http.MethodPost)
 
-	fmt.Printf("Server Listening...")
+	fmt.Printf("Server Listening at %s...\n", h.address)
 	return http.ListenAndServe(h.address, mainRoute)
 }

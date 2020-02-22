@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 
 	"github.com/lvl484/task-runner/config"
@@ -16,7 +15,7 @@ func main() {
 	config := config.Init()
 	db := database.NewMemory()
 	run := runner.NewBash()
-	sch, err := scheduler.NewScheduler(context.Background(), run, db)
+	sch, err := scheduler.NewScheduler(run, db)
 	if err != nil {
 		log.Fatalln(err)
 	}
