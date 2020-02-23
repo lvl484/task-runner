@@ -10,13 +10,17 @@ type TaskInput struct {
 }
 
 type Task struct {
-	ID         string    `json:"id"`
-	TimeStart  time.Time `json:"time_start"`
-	TimeFinish time.Time `json:"time_finish"`
+	ID         string `json:"id"`
+	IsAction   bool   `json:"is_action"`
+	TaskInput  `json:"task_input"`
+	Executions []Execution `json:"executions"`
+}
+
+type Execution struct {
+	StartTime  time.Time `json:"start_time"`
+	FinishTime time.Time `json:"finish_time"`
 	Status     Status    `json:"status"`
 	Output     string    `json:"output"`
-	IsAction   bool      `json:"is_action"`
-	TaskInput  `json:"task_input"`
 }
 
 func NewTask(input *TaskInput) *Task {

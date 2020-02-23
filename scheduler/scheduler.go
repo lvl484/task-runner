@@ -62,6 +62,7 @@ func (s *Scheduler) execution(done chan struct{}, task *model.Task) {
 		select {
 		case <-done:
 			fmt.Printf("[%s] Done!\n", task.ID)
+			fmt.Printf("\nHistory was saved with [%s]\n", task.ID)
 			return
 		case t = <-ticker.C:
 		}
@@ -111,21 +112,25 @@ func (s *Scheduler) run(id string) error {
 	if err != nil {
 		return fmt.Errorf("get task: %w", err)
 	}
-	task.Status = model.Running
-	task.TimeStart = time.Now()
+
+	e := new(model.Execution)
+
+	e.Status = model.Running
+	e.StartTime = time.Now()
 	err = s.database.UpdateTask(ctx, task.ID, task)
 	if err != nil {
 		return fmt.Errorf("update running task: %w", err)
 	}
 	output, err := s.runner.Execute(ctx, task)
 	if err != nil {
-		task.Status = model.Failed
+		e.Status = model.Failed
 		output = err.Error()
 	} else {
-		task.Status = model.Succeed
+		e.Status = model.Succeed
 	}
-	task.TimeFinish = time.Now()
-	task.Output = output
+	e.FinishTime = time.Now()
+	e.Output = output
+	task.Executions = append(task.Executions, *e)
 	err = s.database.UpdateTask(ctx, task.ID, task)
 	if err != nil {
 		return fmt.Errorf("update completed task: %w", err)

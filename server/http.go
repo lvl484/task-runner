@@ -3,11 +3,12 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/lvl484/task-runner/model"
 	"github.com/lvl484/task-runner/service"
-	"log"
-	"net/http"
 )
 
 const TaskID string = "ID"
@@ -82,7 +83,7 @@ func (h *HTTP) GetTaskStatus(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars[TaskID]
 	task := h.gettingTask(w, r, "get status:", id)
-	h.writingResponse(w, []byte(task.Status), "get status [writing into response]:")
+	h.writingResponse(w, []byte(task.Executions[len(task.Executions)-1].Status), "get status [writing into response]:")
 }
 
 // UpdateTask reads id from request, decodes request to get task, and updates memory
@@ -93,6 +94,20 @@ func (h *HTTP) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	h.jsonDecoding(w, r, &task, "create action [json decoding]")
 
 	err := h.service.UpdateTask(r.Context(), id, &task)
+	if err != nil {
+		log.Println("update task:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *HTTP) UpdateAction(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars[TaskID]
+	var task model.TaskInput
+	h.jsonDecoding(w, r, &task, "create action [json decoding]")
+
+	err := h.service.UpdateAction(r.Context(), id, &task)
 	if err != nil {
 		log.Println("update task:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -118,18 +133,34 @@ func (h *HTTP) GetTaskOutput(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars[TaskID]
 	task := h.gettingTask(w, r, "get output:", id)
-	h.writingResponse(w, []byte(task.Output), "get output [writing into response]:")
+	h.writingResponse(w, []byte(task.Executions[len(task.Executions)-1].Output), "get output [writing into response]:")
+}
+
+// GetTaskOutput reads id from request and gets history of task executions
+// Write into response task outputs History
+func (h *HTTP) GetTaskHistory(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars[TaskID]
+	task := h.gettingTask(w, r, "get output:", id)
+	data, err := json.Marshal(task.Executions)
+	if err != nil {
+		log.Println("error executions:", err)
+		return
+	}
+	h.writingResponse(w, data, "get output [writing into response]:")
 }
 
 // Start create all routes and starting server
 func (h *HTTP) Start() error {
 	mainRoute := mux.NewRouter()
 	mainRoute.HandleFunc("/tasks", h.CreateTask).Methods(http.MethodPost)
+	mainRoute.HandleFunc("/tasks/action", h.CreateAction).Methods(http.MethodPost)
 	mainRoute.HandleFunc("/tasks/{ID}", h.UpdateTask).Methods(http.MethodPut)
+	mainRoute.HandleFunc("/tasks/action/{ID}", h.UpdateAction).Methods(http.MethodPut)
 	mainRoute.HandleFunc("/tasks/{ID}", h.DeleteTask).Methods(http.MethodDelete)
 	mainRoute.HandleFunc("/tasks/{ID}/output", h.GetTaskOutput).Methods(http.MethodGet)
 	mainRoute.HandleFunc("/tasks/{ID}/status", h.GetTaskStatus).Methods(http.MethodGet)
-	mainRoute.HandleFunc("/tasks/action", h.CreateAction).Methods(http.MethodPost)
+	mainRoute.HandleFunc("/tasks/{ID}/history", h.GetTaskHistory).Methods(http.MethodGet)
 
 	fmt.Printf("Server Listening at %s...\n", h.address)
 	return http.ListenAndServe(h.address, mainRoute)
