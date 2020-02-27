@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,40 +9,29 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/lvl484/task-runner/model"
-	"github.com/lvl484/task-runner/service"
 )
 
 const TaskID string = "ID"
 
 type HTTP struct {
-	service *service.Service
+	service Service
 	address string
 }
 
-func NewHTTP(s *service.Service, addr string) *HTTP {
+type Service interface {
+	CreateTask(ctx context.Context, input *model.TaskInput) (string, error)
+	CreateAction(ctx context.Context, input *model.TaskInput) (string, error)
+	DeleteTask(ctx context.Context, id string) error
+	UpdateTask(ctx context.Context, id string, input *model.TaskInput) error
+	UpdateAction(ctx context.Context, id string, input *model.TaskInput) error
+	GetTask(ctx context.Context, id string) (*model.Task, error)
+}
+
+func NewHTTP(s Service, addr string) *HTTP {
 	return &HTTP{
 		service: s,
 		address: addr,
 	}
-}
-
-func (h *HTTP) jsonDecoding(w http.ResponseWriter, r *http.Request, task *model.TaskInput, str string) {
-	err := json.NewDecoder(r.Body).Decode(&task)
-	if err != nil {
-		log.Println(str, err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-}
-
-func (h *HTTP) gettingTask(w http.ResponseWriter, r *http.Request, str string, id string) *model.Task {
-	task, err := h.service.GetTask(r.Context(), id)
-	if err != nil {
-		log.Println(str, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return nil
-	}
-	return task
 }
 
 func (h *HTTP) writingResponse(w http.ResponseWriter, value []byte, str string) {
@@ -54,26 +44,42 @@ func (h *HTTP) writingResponse(w http.ResponseWriter, value []byte, str string) 
 // CreateTask Decodes request and adds new task into memory
 func (h *HTTP) CreateTask(w http.ResponseWriter, r *http.Request) {
 	var task model.TaskInput
-	h.jsonDecoding(w, r, &task, "create task [json decoding]:")
+
+	err := json.NewDecoder(r.Body).Decode(&task)
+	if err != nil {
+		log.Println("create task [json decoding]:", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	id, err := h.service.CreateTask(r.Context(), &task)
 	if err != nil {
 		log.Println("create task:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	h.writingResponse(w, []byte(id), "create task [writing into response]:")
 }
 
 // CreateTask Decodes request and adds new action into memory
 func (h *HTTP) CreateAction(w http.ResponseWriter, r *http.Request) {
 	var task model.TaskInput
-	h.jsonDecoding(w, r, &task, "create action [json decoding]")
+
+	err := json.NewDecoder(r.Body).Decode(&task)
+	if err != nil {
+		log.Println("create task [json decoding]:", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	id, err := h.service.CreateAction(r.Context(), &task)
 	if err != nil {
 		log.Println("create action:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	h.writingResponse(w, []byte(id), "create action [writing into response]:")
 }
 
@@ -82,7 +88,14 @@ func (h *HTTP) CreateAction(w http.ResponseWriter, r *http.Request) {
 func (h *HTTP) GetTaskStatus(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars[TaskID]
-	task := h.gettingTask(w, r, "get status:", id)
+
+	task, err := h.service.GetTask(r.Context(), id)
+	if err != nil {
+		log.Println("get status:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	h.writingResponse(w, []byte(task.Executions[len(task.Executions)-1].Status), "get status [writing into response]:")
 }
 
@@ -90,10 +103,17 @@ func (h *HTTP) GetTaskStatus(w http.ResponseWriter, r *http.Request) {
 func (h *HTTP) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars[TaskID]
-	var task model.TaskInput
-	h.jsonDecoding(w, r, &task, "create action [json decoding]")
 
-	err := h.service.UpdateTask(r.Context(), id, &task)
+	var task model.TaskInput
+
+	err := json.NewDecoder(r.Body).Decode(&task)
+	if err != nil {
+		log.Println("create task [json decoding]:", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.UpdateTask(r.Context(), id, &task)
 	if err != nil {
 		log.Println("update task:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -104,10 +124,17 @@ func (h *HTTP) UpdateTask(w http.ResponseWriter, r *http.Request) {
 func (h *HTTP) UpdateAction(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars[TaskID]
-	var task model.TaskInput
-	h.jsonDecoding(w, r, &task, "create action [json decoding]")
 
-	err := h.service.UpdateAction(r.Context(), id, &task)
+	var task model.TaskInput
+
+	err := json.NewDecoder(r.Body).Decode(&task)
+	if err != nil {
+		log.Println("create task [json decoding]:", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.UpdateAction(r.Context(), id, &task)
 	if err != nil {
 		log.Println("update task:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -119,6 +146,7 @@ func (h *HTTP) UpdateAction(w http.ResponseWriter, r *http.Request) {
 func (h *HTTP) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars[TaskID]
+
 	err := h.service.DeleteTask(r.Context(), id)
 	if err != nil {
 		log.Println("delete task:", err)
@@ -132,7 +160,14 @@ func (h *HTTP) DeleteTask(w http.ResponseWriter, r *http.Request) {
 func (h *HTTP) GetTaskOutput(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars[TaskID]
-	task := h.gettingTask(w, r, "get output:", id)
+
+	task, err := h.service.GetTask(r.Context(), id)
+	if err != nil {
+		log.Println("get output:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	h.writingResponse(w, []byte(task.Executions[len(task.Executions)-1].Output), "get output [writing into response]:")
 }
 
@@ -141,7 +176,14 @@ func (h *HTTP) GetTaskOutput(w http.ResponseWriter, r *http.Request) {
 func (h *HTTP) GetTaskHistory(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars[TaskID]
-	task := h.gettingTask(w, r, "get output:", id)
+
+	task, err := h.service.GetTask(r.Context(), id)
+	if err != nil {
+		log.Println("get output", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+
+	}
 	data, err := json.Marshal(task.Executions)
 	if err != nil {
 		log.Println("error executions:", err)
